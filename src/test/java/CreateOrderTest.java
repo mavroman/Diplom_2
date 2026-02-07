@@ -7,11 +7,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("API тесты на создание заказа")
 public class CreateOrderTest {
@@ -19,10 +21,19 @@ public class CreateOrderTest {
     private ApiClient apiClient;
     private User user;
     private String accessToken;
+    private List<String> validIngredientsId;
 
     @BeforeEach
     public void setUp() {
         apiClient = new ApiClient();
+
+        Response ingredientsResponse = apiClient.getIngredients();
+        assertEquals(200, ingredientsResponse.statusCode(), "Не удалось получить список ингредиентов");
+
+        validIngredientsId = ingredientsResponse.body().jsonPath().getList("data._id");
+        assertFalse(validIngredientsId.isEmpty(), "Список ингредиентов не должен быть пустым");
+
+
         String timestamp = String.valueOf(System.currentTimeMillis());
         user = new User("romatest-" + timestamp + "@yandex.ru", "12345", "Roms");
 
@@ -36,12 +47,17 @@ public class CreateOrderTest {
     @Test
     @DisplayName("Создание заказа с авторизацией и валидными ингредиентами")
     public void createOrderWithAuthAndValidIngredients() {
-        String requestBody = "{\"ingredients\": [\"61c0c5a71d1f82001bdaaa6d\", \"61c0c5a71d1f82001bdaaa6f\"]}";
+        //String requestBody = "{\"ingredients\": [\"61c0c5a71d1f82001bdaaa6d\", \"61c0c5a71d1f82001bdaaa6f\"]}";
+        String requestBody = String.format(
+                "{\"ingredients\": [\"%s\", \"%s\"]}",
+                validIngredientsId.get(0),
+                validIngredientsId.get(1)
+        );
 
         Response response = createOrderWithRequestBody(accessToken, requestBody);
-
         validateSuccessfulOrderResponse(response);
     }
+
 
     @Step("Создание заказа с access token = '{accessToken}' и телом запроса: {requestBody}")
     private Response createOrderWithRequestBody(String accessToken, String requestBody) {

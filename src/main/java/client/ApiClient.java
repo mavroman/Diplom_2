@@ -80,6 +80,14 @@ public class ApiClient {
                 .get("api/orders");
     }
 
+    public Response getIngredients() {
+        return given()
+                .baseUri(BASE_URL)
+                .contentType("application/json")
+                .when()
+                .get("api/ingredients");
+    }
+
 
 
 }
